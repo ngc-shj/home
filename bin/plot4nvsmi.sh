@@ -189,7 +189,7 @@ for _title in "${!DATA_IDX[@]}"; do
 		if [[ ${gpu_id} -eq ${GPU_COUNT} ]]; then
 			endl=""
 		fi
-		puts \"${TMPFILE}-${gpu_id}\" using ${DATA_IDX[timestamp]}:${data_idx} with lp title "'${GPUS[${gpu_id}]}'"${endl}
+		puts \"${TMPFILE}-${gpu_id}\" using ${DATA_IDX[timestamp]}:${data_idx} with lp title "'${GPUS[${gpu_id}]}:[${gpu_id}]'"${endl}
 	done
 	puts ""
 	} >> ${GNUPLOT_SCRIPT}
