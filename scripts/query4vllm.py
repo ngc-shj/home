@@ -81,7 +81,7 @@ def q(
     print(f"   total time = {total_time:f} [s]")
     return user_messages
 
-chat_history = ""
-chat_history = q("ドラえもんとはなにか")
-chat_history = q("続きを教えてください", chat_history)
+print('chat_history = ""')
+print('chat_history = q("ドラえもんとはなにか")')
+print('chat_history = q("続きを教えてください", chat_history)')
 
