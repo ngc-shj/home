@@ -15,6 +15,7 @@ model = LLM(
     trust_remote_code=True,
     #tensor_parallel_size=2,
     #max_model_len=1024
+    gpu_memory_utilization=0.2
 )
 tokenizer = model.get_tokenizer()
 
@@ -45,7 +46,7 @@ def q(
     if chat_history:
         user_messages = chat_history + user_messages
     messages += user_messages
-    # generateion prompts
+    # generation prompts
     prompt = tokenizer.apply_chat_template(
         conversation=messages,
         add_generation_prompt=True,
