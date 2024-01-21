@@ -1,12 +1,23 @@
 import sys
+import argparse
 from vllm import LLM, SamplingParams
 from typing import List, Dict
 import time
 
-if len(sys.argv) < 2:
-    exit()
+# argv
+parser = argparse.ArgumentParser()
+parser.add_argument("--model-path", type=str, default=None)
+parser.add_argument("--no-instruct", action='store_true')
+parser.add_argument("--no-use-system-prompt", action='store_true')
 
-model_id = sys.argv[1]
+args = parser.parse_args(sys.argv[1:])
+
+model_id = args.model_path
+if model_id == None:
+    exit
+
+is_instruct = not args.no_instruct
+use_system_prompt = not args.no_use_system_prompt
 
 # トークナイザーとモデルの準備
 model = LLM(
@@ -14,8 +25,9 @@ model = LLM(
     dtype="auto",
     trust_remote_code=True,
     #tensor_parallel_size=2,
-    #max_model_len=1024
-    gpu_memory_utilization=0.2
+    #max_model_len=1024,
+    #quantization="awq",
+    #gpu_memory_utilization=0.2
 )
 tokenizer = model.get_tokenizer()
 
@@ -33,29 +45,41 @@ generation_params = SamplingParams(
 
 def q(
     user_query: str,
-    chat_history: List[Dict[str, str]]=None
+    history: List[Dict[str, str]]=None
 ):
     start = time.process_time()
     # messages
-    messages = [
-        {"role": "system", "content": DEFAULT_SYSTEM_PROMPT},
-    ]
-    user_messages = [
-        {"role": "user", "content": user_query}
-    ]
-    if chat_history:
-        user_messages = chat_history + user_messages
+    messages = ""
+    if is_instruct:
+        messages = []
+        if use_system_prompt:
+            messages = [
+                {"role": "system", "content": DEFAULT_SYSTEM_PROMPT},
+            ]
+        user_messages = [
+            {"role": "user", "content": user_query}
+        ]
+    else:
+        user_messages = user_query
+    if history:
+        user_messages = history + user_messages
     messages += user_messages
     # generation prompts
-    prompt = tokenizer.apply_chat_template(
-        conversation=messages,
-        add_generation_prompt=True,
-        tokenize=False
-    )
+    if is_instruct:
+        prompt = tokenizer.apply_chat_template(
+            conversation=messages,
+            add_generation_prompt=True,
+            tokenize=False
+        )
+    else:
+        prompt = messages
     input_ids = tokenizer.encode(
         prompt,
         add_special_tokens=False,
     )
+    print("--- prompt")
+    print(prompt)
+    print("--- output")
     # 推論
     outputs = model.generate(
         sampling_params=generation_params,
@@ -63,14 +87,13 @@ def q(
     )
     print(outputs)
     output = outputs[0]
-    print("--- prompt")
-    print(output.prompt)
-    print(prompt)
-    print("--- output")
     print(output.outputs[0].text)
-    user_messages.append(
-        {"role": "assistant", "content": output.outputs[0].text}
-    )
+    if is_instruct:
+        user_messages.append(
+            {"role": "assistant", "content": output.outputs[0].text}
+        )
+    else:
+        user_messages += output.outputs[0].text
     end = time.process_time()
     ##
     input_tokens = len(output.prompt_token_ids)
@@ -82,7 +105,7 @@ def q(
     print(f"   total time = {total_time:f} [s]")
     return user_messages
 
-print('chat_history = ""')
-print('chat_history = q("ドラえもんとはなにか")')
-print('chat_history = q("続きを教えてください", chat_history)')
+print('history = ""')
+print('history = q("ドラえもんとはなにか")')
+print('history = q("続きを教えてください", history)')
 

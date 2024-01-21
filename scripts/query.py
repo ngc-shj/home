@@ -1,13 +1,24 @@
 import sys
+import argparse
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, TextStreamer
 from typing import List, Dict
 import time
 
-if len(sys.argv) < 2:
-    exit()
+# argv
+parser = argparse.ArgumentParser()
+parser.add_argument("--model-path", type=str, default=None)
+parser.add_argument("--no-instruct", action='store_true')
+parser.add_argument("--no-use-system-prompt", action='store_true')
 
-model_id = sys.argv[1]
+args = parser.parse_args(sys.argv[1:])
+
+model_id = args.model_path
+if model_id == None:
+    exit
+
+is_instruct = not args.no_instruct
+use_system_prompt = not args.no_use_system_prompt
 
 # トークナイザーとモデルの準備
 tokenizer = AutoTokenizer.from_pretrained(
@@ -18,9 +29,12 @@ model = AutoModelForCausalLM.from_pretrained(
     model_id,
     torch_dtype="auto",
     device_map="auto",
+    #device_map="cuda",
     low_cpu_mem_usage=True,
     trust_remote_code=True
 )
+#if torch.cuda.is_available():
+#    model = model.to("cuda")
 
 streamer = TextStreamer(
     tokenizer,
@@ -38,39 +52,48 @@ generation_params = {
     "top_p": 0.95,
     "top_k": 40,
     "max_new_tokens": max_new_tokens,
-    "repetition_penalty": 1.1
+    "repetition_penalty": 1.1,
 }
+
 
 def q(
     user_query: str,
-    chat_history: List[Dict[str, str]]=None
+    history: List[Dict[str, str]]=None
 ):
     start = time.process_time()
     # messages
-    messages = [
-        {"role": "system", "content": DEFAULT_SYSTEM_PROMPT},
-    ]
-    user_messages = [
-        {"role": "user", "content": user_query}
-    ]
-    if chat_history:
-        user_messages = chat_history + user_messages
+    messages = ""
+    if is_instruct:
+        messages = []
+        if use_system_prompt:
+            messages = [
+                {"role": "system", "content": DEFAULT_SYSTEM_PROMPT},
+            ]
+        user_messages = [
+            {"role": "user", "content": user_query}
+        ]
+    else:
+        user_messages = user_query
+    if history:
+        user_messages = history + user_messages
     messages += user_messages
     # generation prompts
-    prompt = tokenizer.apply_chat_template(
-        conversation=messages,
-        add_generation_prompt=True,
-        tokenize=False
-    )
-    print("--- prompt")
-    print(prompt)
-    print("---")
-    #
+    if is_instruct:
+        prompt = tokenizer.apply_chat_template(
+            conversation=messages,
+            add_generation_prompt=True,
+            tokenize=False
+        )
+    else:
+        prompt = messages
     input_ids = tokenizer.encode(
         prompt,
         add_special_tokens=False,
         return_tensors="pt"
     )
+    print("--- prompt")
+    print(prompt)
+    print("--- output")
     # 推論
     output_ids = model.generate(
         input_ids.to(model.device),
@@ -81,9 +104,12 @@ def q(
         output_ids[0][input_ids.size(1) :],
         skip_special_tokens=True
     )
-    user_messages.append(
-        {"role": "assistant", "content": output}
-    )
+    if is_instruct:
+        user_messages.append(
+            {"role": "assistant", "content": output}
+        )
+    else:
+        user_messages += output
     end = time.process_time()
     ##
     input_tokens = len(input_ids[0])
@@ -95,7 +121,7 @@ def q(
     print(f"   total time = {total_time:f} [s]")
     return user_messages
 
-print('chat_history = ""')
-print('chat_history = q("ドラえもんとはなにか")')
-print('chat_history = q("続きを教えてください", chat_history)')
+print('history = ""')
+print('history = q("ドラえもんとはなにか")')
+print('history = q("続きを教えてください", history)')
 
