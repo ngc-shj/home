@@ -21,7 +21,7 @@ function usage_exit() {
 	exit 1
 }
 
-# Function to dispalay string
+# Function to display string
 function puts() {
 	printf '%s\n' "$*"
 }
@@ -66,7 +66,7 @@ fi
 
 : ${OUT_DIR:="./"}
 if [[ ! -d ${OUT_DIR} ]]; then
-	puts "Error: Directory not found: ${OUT_DIR}"
+	puts "Error: Output directory not found: ${OUT_DIR}"
 	exit 1
 fi
 
