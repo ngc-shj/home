@@ -9,6 +9,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--model-path", type=str, default=None)
 parser.add_argument("--no-instruct", action='store_true')
 parser.add_argument("--no-use-system-prompt", action='store_true')
+parser.add_argument("--max-tokens", type=int, default=256)
 
 args = parser.parse_args(sys.argv[1:])
 
@@ -18,6 +19,7 @@ if model_id == None:
 
 is_instruct = not args.no_instruct
 use_system_prompt = not args.no_use_system_prompt
+max_new_tokens = args.max_tokens
 
 # トークナイザーとモデルの準備
 model = LLM(
@@ -34,7 +36,6 @@ tokenizer = model.get_tokenizer()
 DEFAULT_SYSTEM_PROMPT = "あなたは誠実で優秀な日本人のアシスタントです。"
 
 # generation params
-max_new_tokens=1024
 generation_params = SamplingParams(
     temperature=0.8,
     top_p=0.95,
