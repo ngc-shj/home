@@ -26,6 +26,12 @@ function puts() {
     printf '%s\n' "$*"
 }
 
+# Function to display commands
+function puts_exec() {
+    puts "Execute commands: $*"
+    eval "$@" 2>&1
+}
+
 #
 # analyze options.
 #
@@ -56,14 +62,19 @@ if [[ ! -d ${LOGDIR} ]]; then
     exit 1
 fi
 
+NVIDIA_SMI_OPTS=""
+if [[ ! -z ${GPU_IDS} ]]; then
+    NVIDIA_SMI_OPTS="--id=${GPU_IDS}"
+fi
+
 CUR_TIME=$(date +%Y%m%d-%H%M%S)
 LOGFILE=${LOGDIR}/gpu-${LOG_PREFIX}-${CUR_TIME}.log
 
-nvidia-smi \
+puts_exec nvidia-smi \
     --query-gpu=index,timestamp,utilization.gpu,utilization.memory,memory.total,memory.used,temperature.gpu,name \
 	--format=csv \
     -l 1 \
-    -id=${GPU_IDS}
-	-f ${LOGFILE}
+	-f ${LOGFILE} \
+    ${NVIDIA_SMI_OPTS}
 
 exit $?
