@@ -56,7 +56,7 @@ fi
 
 LOG_PREFIX=$1
 
-: ${LOGDIR:="~/log"}
+: ${LOGDIR:="${HOME}/log"}
 if [[ ! -d ${LOGDIR} ]]; then
     puts "Error: log directory not found: ${LOGDIR}"
     exit 1
