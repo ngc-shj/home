@@ -1,8 +1,7 @@
 import sys
 import argparse
 from huggingface_hub import hf_hub_download
-from llama_cpp import Llama
-from transformers import AutoTokenizer
+from llama_cpp import Llama, llama_chat_format
 from typing import List, Dict
 import time
 
@@ -36,21 +35,20 @@ n_ctx = args.n_ctx
 n_threads = args.n_threads
 n_gpu_layers = args.n_gpu_layers
 
-## Instantiate tokenizer from base model
-tokenizer = AutoTokenizer.from_pretrained(
-    model_id,
-    trust_remote_code=True
-)
-
 ## Download the GGUF model
 ggml_model_path = hf_hub_download(
     args.ggml_model_path,
     filename=args.ggml_model_file
 )
 
+# Instantiate chat format and handler
+chat_formatter = llama_chat_format.hf_autotokenizer_to_chat_formatter(model_id)
+chat_handler = llama_chat_format.hf_autotokenizer_to_chat_completion_handler(model_id)
+
 ## Instantiate model from downloaded file
 model = Llama(
     model_path=ggml_model_path,
+    chat_handler=chat_handler,
     n_ctx=n_ctx,
     n_threads=n_threads,
     n_gpu_layers=n_gpu_layers
@@ -93,33 +91,39 @@ def q(
     messages += user_messages
     # generation prompts
     if is_instruct:
-        prompt = tokenizer.apply_chat_template(
-            conversation=messages,
-            add_generation_prompt=True,
-            tokenize=False
-        )
+        prompt = chat_formatter(messages=messages)
     else:
         prompt = messages
+    # debug
+    print("--- messages")
+    print(messages)
     print("--- prompt")
     print(prompt)
     print("--- output")
     # 推論
-    outputs = model.create_completion(
-        prompt=prompt,
-        #echo=True,
-        #stream=True,
-        **generation_params
-    )
-    #for output in outputs:
-    #    print(output["choices"][0]["text"], end='')
-    output = outputs["choices"][0]["text"]
-    print(output)
     if is_instruct:
+        outputs = model.create_chat_completion(
+            messages=messages,
+            #echo=True,
+            #stream=True,
+            **generation_params
+        )
+        output = outputs["choices"][0]["message"]["content"]
         user_messages.append(
             {"role": "assistant", "content": output}
         )
     else:
+        outputs = model.create_completion(
+            prompt=prompt,
+            #echo=True,
+            #stream=True,
+            **generation_params
+        )
+        output = outputs["choices"][0]["text"]
+        #for output in outputs:
+        #    print(output["choices"][0]["text"], end='')
         user_messages += output
+    print(output)
     end = time.process_time()
     ##
     input_tokens = outputs["usage"]["prompt_tokens"]
