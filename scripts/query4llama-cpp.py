@@ -71,7 +71,7 @@ generation_params = {
 def q(
     user_query: str,
     history: List[Dict[str, str]]=None
-):
+) -> List[Dict[str, str]]:
     start = time.process_time()
     # messages
     messages = ""

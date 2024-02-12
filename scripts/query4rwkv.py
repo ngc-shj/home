@@ -57,7 +57,7 @@ pipeline_args = PIPELINE_ARGS(
 def generate_chat_prompt(
     conversation: List[Dict[str, str]],
     add_generation_prompt=True,
-):
+) -> str:
     prompt = ""
     for message in conversation:
         role = message["role"]
@@ -75,7 +75,7 @@ def generate_prompt(
     user_query: str,
     instruction: str=None,
     add_generation_prompt=True,
-):
+) -> str:
     prompt = ""
     prompt += f"Instruction: {instruction}\n\n"
     prompt += f"Input: {user_query}\n\n"
@@ -91,7 +91,7 @@ def q(
     user_query: str,
     history: List[Dict[str, str]]=None,
     instruction: str=None
-):
+) -> List[Dict[str, str]]:
     start = time.process_time()
     # messages
     messages = ""
