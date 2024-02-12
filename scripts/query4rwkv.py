@@ -73,10 +73,11 @@ def generate_chat_prompt(
 #
 def generate_prompt(
     user_query: str,
+    instruction: str=None,
     add_generation_prompt=True,
 ):
     prompt = ""
-    prompt += f"Instruction: {DEFAULT_SYSTEM_PROMPT}\n\n"
+    prompt += f"Instruction: {instruction}\n\n"
     prompt += f"Input: {user_query}\n\n"
     if add_generation_prompt:
         prompt += f"Response:"
@@ -88,7 +89,8 @@ def print_nolf(outstr):
 
 def q(
     user_query: str,
-    history: List[Dict[str, str]]=None
+    history: List[Dict[str, str]]=None,
+    instruction: str=None
 ):
     start = time.process_time()
     # messages
@@ -116,6 +118,7 @@ def q(
     else:
         prompt = generate_prompt(
             user_query=messages,
+            instruction=instruction,
             add_generation_prompt=True,
         )
     print("--- prompt")
