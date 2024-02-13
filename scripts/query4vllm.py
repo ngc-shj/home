@@ -7,7 +7,7 @@ import time
 # argv
 parser = argparse.ArgumentParser()
 parser.add_argument("--model-path", type=str, default=None)
-parser.add_argument("--no-instruct", action='store_true')
+parser.add_argument("--no-chat", action='store_true')
 parser.add_argument("--no-use-system-prompt", action='store_true')
 parser.add_argument("--max-tokens", type=int, default=256)
 
@@ -17,7 +17,7 @@ model_id = args.model_path
 if model_id == None:
     exit
 
-is_instruct = not args.no_instruct
+is_chat = not args.no_chat
 use_system_prompt = not args.no_use_system_prompt
 max_new_tokens = args.max_tokens
 
@@ -51,7 +51,7 @@ def q(
     start = time.process_time()
     # messages
     messages = ""
-    if is_instruct:
+    if is_chat:
         messages = []
         if use_system_prompt:
             messages = [
@@ -66,7 +66,7 @@ def q(
         user_messages = history + user_messages
     messages += user_messages
     # generation prompts
-    if is_instruct:
+    if is_chat:
         prompt = tokenizer.apply_chat_template(
             conversation=messages,
             add_generation_prompt=True,
@@ -89,7 +89,7 @@ def q(
     print(outputs)
     output = outputs[0]
     print(output.outputs[0].text)
-    if is_instruct:
+    if is_chat:
         user_messages.append(
             {"role": "assistant", "content": output.outputs[0].text}
         )

@@ -15,7 +15,7 @@ import time
 parser = argparse.ArgumentParser()
 parser.add_argument("--model-path", type=str, default="BlinkDL/rwkv-6-world")
 parser.add_argument("--model-file", type=str, default="RWKV-x060-World-1B6-v2-20240208-ctx4096")
-parser.add_argument("--no-instruct", action='store_true')
+parser.add_argument("--no-chat", action='store_true')
 parser.add_argument("--no-use-system-prompt", action='store_true')
 parser.add_argument("--max-tokens", type=int, default=256)
 
@@ -28,7 +28,7 @@ model_file = args.model_file
 if model_file == None:
     exit
 
-is_instruct = not args.no_instruct
+is_chat = not args.no_chat
 use_system_prompt = not args.no_use_system_prompt
 max_new_tokens = min(3500, args.max_tokens)
 
@@ -95,7 +95,7 @@ def q(
     start = time.process_time()
     # messages
     messages = ""
-    if is_instruct:
+    if is_chat:
         messages = []
         if use_system_prompt:
             messages = [
@@ -110,7 +110,7 @@ def q(
         user_messages = history + user_messages
     messages += user_messages
     # generation prompts
-    if is_instruct:
+    if is_chat:
         prompt = generate_chat_prompt(
             conversation=messages,
             add_generation_prompt=True,
@@ -131,7 +131,7 @@ def q(
         args=pipeline_args,
         callback=print_nolf
     )
-    if is_instruct:
+    if is_chat:
         user_messages.append(
             {"role": "Assistant", "content": output}
         )

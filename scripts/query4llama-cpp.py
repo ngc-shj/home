@@ -10,7 +10,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--model-path", type=str, default=None)
 parser.add_argument("--ggml-model-path", type=str, default=None)
 parser.add_argument("--ggml-model-file", type=str, default=None)
-parser.add_argument("--no-instruct", action='store_true')
+parser.add_argument("--no-chat", action='store_true')
 parser.add_argument("--no-use-system-prompt", action='store_true')
 parser.add_argument("--max-tokens", type=int, default=256)
 parser.add_argument("--n-ctx", type=int, default=2048)
@@ -28,7 +28,7 @@ if args.ggml_model_path == None:
 if args.ggml_model_file == None:
     exit
 
-is_instruct = not args.no_instruct
+is_chat = not args.no_chat
 use_system_prompt = not args.no_use_system_prompt
 max_new_tokens = args.max_tokens
 n_ctx = args.n_ctx
@@ -75,7 +75,7 @@ def q(
     start = time.process_time()
     # messages
     messages = ""
-    if is_instruct:
+    if is_chat:
         messages = []
         if use_system_prompt:
             messages = [
@@ -90,7 +90,7 @@ def q(
         user_messages = history + user_messages
     messages += user_messages
     # generation prompts
-    if is_instruct:
+    if is_chat:
         prompt = chat_formatter(messages=messages)
     else:
         prompt = messages
@@ -101,7 +101,7 @@ def q(
     print(prompt)
     print("--- output")
     # 推論
-    if is_instruct:
+    if is_chat:
         outputs = model.create_chat_completion(
             messages=messages,
             #echo=True,
