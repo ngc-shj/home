@@ -38,7 +38,7 @@ model_path = hf_hub_download(repo_id=model_id, filename=f"{model_file}.pth")
 model = RWKV(model=model_path, strategy='cuda fp16')
 pipeline = PIPELINE(model, "rwkv_vocab_v20230424")
 
-DEFAULT_SYSTEM_PROMPT = "あなたは誠実で優秀な日本人のアシスタントです。"
+DEFAULT_SYSTEM_PROMPT = "わたしは誠実で優秀な日本人のアシスタントです。"
 
 # generations params
 pipeline_args = PIPELINE_ARGS(
