@@ -76,7 +76,7 @@ def q(
         prompt = messages
     input_ids = tokenizer.encode(
         prompt,
-        add_special_tokens=False,
+        add_special_tokens=True,
     )
     print("--- prompt")
     print(prompt)
