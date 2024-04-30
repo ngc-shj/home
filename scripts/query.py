@@ -8,6 +8,7 @@ import time
 # argv
 parser = argparse.ArgumentParser()
 parser.add_argument("--model-path", type=str, default=None)
+parser.add_argument("--tokenizer-path", type=str, default=None)
 parser.add_argument("--no-chat", action='store_true')
 parser.add_argument("--no-use-system-prompt", action='store_true')
 parser.add_argument("--max-tokens", type=int, default=256)
@@ -22,14 +23,19 @@ is_chat = not args.no_chat
 use_system_prompt = not args.no_use_system_prompt
 max_new_tokens = args.max_tokens
 
+tokenizer_id = model_id
+if args.tokenizer_path:
+    tokenizer_id = args.tokenizer_path
+
 # トークナイザーとモデルの準備
 tokenizer = AutoTokenizer.from_pretrained(
-    model_id,
+    tokenizer_id,
     trust_remote_code=True
 )
 model = AutoModelForCausalLM.from_pretrained(
     model_id,
-    torch_dtype="auto",
+    #torch_dtype="auto",
+    torch_dtype=torch.bfloat16,
     device_map="auto",
     #device_map="cuda",
     low_cpu_mem_usage=True,
