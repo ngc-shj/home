@@ -34,8 +34,8 @@ tokenizer = AutoTokenizer.from_pretrained(
 )
 model = AutoModelForCausalLM.from_pretrained(
     model_id,
-    #torch_dtype="auto",
-    torch_dtype=torch.bfloat16,
+    torch_dtype="auto",
+    #torch_dtype=torch.bfloat16,
     device_map="auto",
     #device_map="cuda",
     low_cpu_mem_usage=True,
@@ -52,21 +52,21 @@ streamer = TextStreamer(
 
 DEFAULT_SYSTEM_PROMPT = "あなたは誠実で優秀な日本人のアシスタントです。"
 
-# generation params
-generation_params = {
-    "do_sample": True,
-    "temperature": 0.8,
-    "top_p": 0.95,
-    "top_k": 40,
-    "max_new_tokens": max_new_tokens,
-    "repetition_penalty": 1.1,
-}
-
 
 def q(
     user_query: str,
     history: List[Dict[str, str]]=None
 ) -> List[Dict[str, str]]:
+    # generation params
+    generation_params = {
+        "do_sample": True,
+        "temperature": 0.8,
+        "top_p": 0.95,
+        "top_k": 40,
+        "max_new_tokens": max_new_tokens,
+        "repetition_penalty": 1.1,
+    }
+    #
     start = time.process_time()
     # messages
     messages = ""
