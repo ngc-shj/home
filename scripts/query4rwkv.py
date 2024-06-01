@@ -13,8 +13,8 @@ import time
 
 # argv
 parser = argparse.ArgumentParser()
-parser.add_argument("--model-path", type=str, default="BlinkDL/rwkv-6-world")
-parser.add_argument("--model-file", type=str, default="RWKV-x060-World-1B6-v2-20240208-ctx4096")
+parser.add_argument("--model-path", type=str)
+parser.add_argument("--model-file", type=str)
 parser.add_argument("--no-chat", action='store_true')
 parser.add_argument("--no-use-system-prompt", action='store_true')
 parser.add_argument("--max-tokens", type=int, default=256)
@@ -22,8 +22,8 @@ parser.add_argument("--max-tokens", type=int, default=256)
 args = parser.parse_args(sys.argv[1:])
 
 model_id = args.model_path
-if model_id == None:
-    exit
+#if model_id == None:
+#    exit
 model_file = args.model_file
 if model_file == None:
     exit
@@ -33,7 +33,11 @@ use_system_prompt = not args.no_use_system_prompt
 max_new_tokens = min(3500, args.max_tokens)
 
 ## Download the rwkv model
-model_path = hf_hub_download(repo_id=model_id, filename=f"{model_file}.pth")
+if model_id:
+    model_path = hf_hub_download(repo_id=model_id, filename=model_file)
+else:
+    model_path = f"{model_file}"
+
 ## Instantiate model from downloaded file
 model = RWKV(model=model_path, strategy='cuda fp16')
 pipeline = PIPELINE(model, "rwkv_vocab_v20230424")
@@ -80,7 +84,7 @@ def generate_prompt(
     prompt += f"Instruction: {instruction}\n\n"
     prompt += f"Input: {user_query}\n\n"
     if add_generation_prompt:
-        prompt += f"Response:"
+        prompt += f"Output:"
     return prompt
 
 # callback function
