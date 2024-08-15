@@ -9,7 +9,10 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--model-path", type=str, default=None)
 parser.add_argument("--no-chat", action='store_true')
 parser.add_argument("--no-use-system-prompt", action='store_true')
-parser.add_argument("--max-tokens", type=int, default=256)
+parser.add_argument("--max-model-len", type=int, default=32768)
+parser.add_argument("--tensor-parallel-size", type=int, default=1)
+parser.add_argument("--gpu-memory-utilization", type=float, default=0.2)
+parser.add_argument("--max-tokens", type=int, default=4096)
 
 args = parser.parse_args(sys.argv[1:])
 
@@ -20,16 +23,19 @@ if model_id == None:
 is_chat = not args.no_chat
 use_system_prompt = not args.no_use_system_prompt
 max_new_tokens = args.max_tokens
+tensor_parallel_size = args.tensor_parallel_size
+max_model_len = args.max_model_len
+gpu_memory_utilization = args.gpu_memory_utilization
 
 # トークナイザーとモデルの準備
 model = LLM(
     model=model_id,
     dtype="auto",
     trust_remote_code=True,
-    #tensor_parallel_size=2,
-    #max_model_len=1024,
+    tensor_parallel_size=tensor_parallel_size,
+    max_model_len=max_model_len,
     #quantization="awq",
-    #gpu_memory_utilization=0.2
+    gpu_memory_utilization=gpu_memory_utilization
 )
 tokenizer = model.get_tokenizer()
 
