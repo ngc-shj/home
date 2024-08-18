@@ -41,19 +41,19 @@ tokenizer = model.get_tokenizer()
 
 DEFAULT_SYSTEM_PROMPT = "あなたは誠実で優秀な日本人のアシスタントです。"
 
-# generation params
-generation_params = SamplingParams(
-    temperature=0.8,
-    top_p=0.95,
-    top_k=40,
-    max_tokens=max_new_tokens,
-    repetition_penalty=1.1
-)
-
 def q(
     user_query: str,
     history: List[Dict[str, str]]=None
 ) -> List[Dict[str, str]]:
+    # generation params
+    generation_params = SamplingParams(
+        temperature=0.8,
+        top_p=0.95,
+        top_k=40,
+        max_tokens=max_new_tokens,
+        repetition_penalty=1.1
+    )
+    #
     start = time.process_time()
     # messages
     messages = ""

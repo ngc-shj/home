@@ -56,22 +56,21 @@ model = Llama(
 
 DEFAULT_SYSTEM_PROMPT = "あなたは誠実で優秀な日本人のアシスタントです。"
 
-# generation params
-# https://github.com/abetlen/llama-cpp-python/blob/main/llama_cpp/llama.py#L1268
-generation_params = {
-    #"do_sample": True,
-    "temperature": 0.8,
-    "top_p": 0.95,
-    "top_k": 40,
-    "max_tokens": max_new_tokens,
-    "repeat_penalty": 1.1,
-}
-
-
 def q(
     user_query: str,
     history: List[Dict[str, str]]=None
 ) -> List[Dict[str, str]]:
+    # generation params
+    # https://github.com/abetlen/llama-cpp-python/blob/main/llama_cpp/llama.py#L1268
+    generation_params = {
+        #"do_sample": True,
+        "temperature": 0.8,
+        "top_p": 0.95,
+        "top_k": 40,
+        "max_tokens": max_new_tokens,
+        "repeat_penalty": 1.1,
+    }
+    #
     start = time.process_time()
     # messages
     messages = ""
