@@ -332,10 +332,6 @@ class Translation:
 
     @staticmethod
     def preprocess_text(text):
-        max_length = 100
-        if len(text) > max_length:
-            return text[:max_length] + "..."
-        
         text = text.replace("...", " ")
         text = text.replace("&", "and")
         
