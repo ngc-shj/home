@@ -40,6 +40,14 @@ def normalize_audio(audio_data, format):
     else:
         raise ValueError(f"Unsupported audio format: {format}")
 
+def get_input_device_index():
+    p = pyaudio.PyAudio()
+    for i in range(p.get_device_count()):
+        info = p.get_device_info_by_index(i)
+        if "blackhole" in info["name"].lower():
+            return i
+    return None
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Real-time Audio Recognition")
     parser.add_argument("--model_path", type=str, default="mlx-community/whisper-large-v3-turbo",
@@ -55,6 +63,7 @@ def parse_arguments():
                         help="Number of channels (default: 1)")
     parser.add_argument("--chunk", type=int, default=1024,
                         help="Chunk size (default: 1024)")
+    parser.add_argument("--input_device", type=int, help="Input device index (default: auto-detect Black Hole)")
     parser.add_argument("--debug", action="store_true", help="Enable debug mode")
     return parser.parse_args()
 
@@ -74,7 +83,7 @@ start_time = time.time()
 
 # 無音検出のためのパラメータ
 SILENCE_THRESHOLD = 0.005
-SILENCE_DURATION = 0.4  # 無音と判断する秒数
+SILENCE_DURATION = 0.3  # 無音と判断する秒数
 VOICE_ACTIVITY_THRESHOLD = 0.01  # 音声活動を判断するための閾値
 
 def audio_callback(in_data, frame_count, time_info, status):
@@ -84,15 +93,22 @@ def audio_callback(in_data, frame_count, time_info, status):
 
 def audio_capture_thread():
     audio = pyaudio.PyAudio()
+    input_device_index = args.input_device if args.input_device is not None else get_input_device_index()
+
+    if input_device_index is None:
+        print("適切な入力デバイスが見つかりません。手動で指定してください。")
+        return
+
     stream = audio.open(format=FORMAT,
                         channels=CHANNELS,
                         rate=RATE,
                         input=True,
+                        input_device_index=input_device_index,
                         frames_per_buffer=CHUNK,
                         stream_callback=audio_callback)
     
     if args.debug:
-        print("音声キャプチャスレッド開始")
+        print(f"音声キャプチャスレッド開始 (デバイスインデックス: {input_device_index})")
     
     stream.start_stream()
     
