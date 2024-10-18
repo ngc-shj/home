@@ -159,10 +159,9 @@ class AudioProcessing:
         return filtered_audio
 
 class SpeechRecognition:
-    def __init__(self, config, processing_queue, translation_queue, args):
+    def __init__(self, config, processing_queue, args):
         self.config = config
         self.processing_queue = processing_queue
-        self.translation_queue = translation_queue
         self.args = args
 
     def recognition_thread(self, is_running):
@@ -191,7 +190,6 @@ class SpeechRecognition:
                 if text and (text != last_text or current_time - last_text_time > 5):
                     self.print_with_strictly_controlled_linebreaks(text)
                     last_text_time = current_time
-                    self.translation_queue.put(text)
                 elif self.args.debug:
                     print("処理後のテキストが空か、直前の文と同じため出力をスキップします")
             
@@ -245,122 +243,24 @@ class SpeechRecognition:
         if buffer:
             print(' '.join(buffer), end='', flush=True)
 
-class Translation:
-    def __init__(self, translation_queue, args):
-        self.translation_queue = translation_queue
-        self.args = args
-        self.load_model()
-        self.last_reload_time = time.time()
-        self.reload_interval = 60  # 1分ごとにモデルを再ロード
-        self.consecutive_errors = 0
-        self.max_consecutive_errors = 1
-        self.error_cooldown = 2  # エラー後の待機時間（秒）
-        self.failed_translations = []  # エラーとなった原文を保存するリスト
-
-    def load_model(self):
-        self.llm_model, self.llm_tokenizer = load(path_or_hf_repo=self.args.llm_model)
-
-    def translation_thread(self, is_running):
-        while is_running.is_set():
-            try:
-                if self.failed_translations:
-                    text = self.failed_translations.pop(0)
-                    if self.args.debug:
-                        print(f"\n再翻訳を試みます: {text}\n")
-                else:
-                    text = self.translation_queue.get(timeout=1)
-                
-                processed_text = self.preprocess_text(text)
-                translated_text = self.translate_text(processed_text)
-                
-                if self.is_valid_translation(translated_text):
-                    print(f"\n翻訳: {translated_text}\n")
-                    self.consecutive_errors = 0
-                else:
-                    if self.args.debug:
-                        print(f"\n翻訳エラー: 有効な翻訳を生成できませんでした。原文: {text}\n")
-                    self.handle_translation_error(text)
-                
-            except queue.Empty:
-                if self.args.debug:
-                    print("翻訳キューが空です")
-            except Exception as e:
-                print(f"\nエラー (翻訳スレッド): {e}", flush=True)
-                self.handle_translation_error(text)
-            
-            self.check_model_reload()
-
-    def translate_text(self, text):
-        prompt = f"以下の英語を日本語に翻訳してください。翻訳のみを出力し、余計な説明は不要です:\n\n{text}\n\n日本語訳:"
-
-        generation_params = {
-            "temp": 0.3,
-            "top_p": 0.95,
-            "max_tokens": 256,
-            "repetition_penalty": 1.1,
-            "repetition_context_size": 20,
-        }
-        if hasattr(self.llm_tokenizer, "apply_chat_template") and self.llm_tokenizer.chat_template is not None:
-            messages = [{"role": "user", "content": prompt}]
-            prompt = self.llm_tokenizer.apply_chat_template(
-                messages, tokenize=False, add_generation_prompt=True
-            )
-        response = generate(self.llm_model, self.llm_tokenizer, prompt=prompt, **generation_params)
-        return response.strip()
-
-    @staticmethod
-    def is_valid_translation(text):
-        return bool(text) and len(set(text)) > 1 and not text.startswith('!!!') and not text.endswith('!!!')
-
-    def handle_translation_error(self, text):
-        self.consecutive_errors += 1
-        self.failed_translations.append(text)
-        if self.consecutive_errors >= self.max_consecutive_errors:
-            if self.args.debug:
-                print("連続エラーが発生しました。モデルを再ロードします。")
-            self.load_model()
-            self.consecutive_errors = 0
-        time.sleep(self.error_cooldown)
-
-    def check_model_reload(self):
-        current_time = time.time()
-        if current_time - self.last_reload_time > self.reload_interval:
-            if self.args.debug:
-                print("定期的なモデル再ロードを実行します。")
-            self.load_model()
-            self.last_reload_time = current_time
-
-    @staticmethod
-    def preprocess_text(text):
-        text = text.replace("...", " ")
-        text = text.replace("&", "and")
-        
-        if not text.endswith(('.', '!', '?')):
-            text += '.'
-        
-        return text.strip()
-
 class AudioRecognitionSystem:
     def __init__(self, args):
         self.args = args
         self.config = AudioConfig(args)
         self.audio_queue = queue.Queue()
         self.processing_queue = queue.Queue()
-        self.translation_queue = queue.Queue()
         self.is_running = threading.Event()
         self.is_running.set()
 
         self.audio_capture = AudioCapture(self.config, self.audio_queue)
         self.audio_processing = AudioProcessing(self.config, self.audio_queue, self.processing_queue)
-        self.speech_recognition = SpeechRecognition(self.config, self.processing_queue, self.translation_queue, args)
-        self.translation = Translation(self.translation_queue, args)
+        self.speech_recognition = SpeechRecognition(self.config, self.processing_queue, args)
 
     def run(self):
         threads = [
             threading.Thread(target=self.audio_capture.capture_thread, args=(self.is_running, self.args)),
             threading.Thread(target=self.audio_processing.processing_thread, args=(self.is_running, self.args)),
             threading.Thread(target=self.speech_recognition.recognition_thread, args=(self.is_running,)),
-            threading.Thread(target=self.translation.translation_thread, args=(self.is_running,))
         ]
         
         for thread in threads:
@@ -394,8 +294,6 @@ def parse_arguments():
     parser.add_argument("--debug", action="store_true", help="Enable debug mode")
     parser.add_argument("--buffer_duration", type=float, default=2.0,
                         help="Duration of audio buffer in seconds (default: 2.0)")
-    parser.add_argument("--llm_model", type=str, default="mlx-community/Llama-3.2-3B-Instruct-4bit",
-                        help="Path to the local LLM model for translation")
     return parser.parse_args()
 
 def main():
