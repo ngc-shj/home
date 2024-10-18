@@ -1,4 +1,5 @@
 import sys
+import os
 import argparse
 from huggingface_hub import hf_hub_download
 from llama_cpp import Llama, llama_chat_format
@@ -22,11 +23,11 @@ args = parser.parse_args(sys.argv[1:])
 ## check and set args
 model_id = args.model_path
 if model_id == None:
-    exit
+    exit()
 if args.ggml_model_path == None:
-    exit
+    exit()
 if args.ggml_model_file == None:
-    exit
+    exit()
 
 is_chat = not args.no_chat
 use_system_prompt = not args.no_use_system_prompt
@@ -35,11 +36,16 @@ n_ctx = args.n_ctx
 n_threads = args.n_threads
 n_gpu_layers = args.n_gpu_layers
 
-## Download the GGUF model
-ggml_model_path = hf_hub_download(
-    args.ggml_model_path,
-    filename=args.ggml_model_file
-)
+## Check if the GGUF model exists locally, if not download it
+local_model_path = os.path.join(args.ggml_model_path, args.ggml_model_file)
+if os.path.isfile(local_model_path):
+    ggml_model_path = local_model_path
+else:
+    ## Download the GGUF model
+    ggml_model_path = hf_hub_download(
+        args.ggml_model_path,
+        filename=args.ggml_model_file
+    )
 
 # Instantiate chat format and handler
 chat_formatter = llama_chat_format.hf_autotokenizer_to_chat_formatter(model_id)
