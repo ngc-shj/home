@@ -15,10 +15,10 @@ parser.add_argument("--max-tokens", type=int, default=256)
 
 args = parser.parse_args(sys.argv[1:])
 
-model_id = args.model_path
-if model_id == None:
-    exit
+if args.model_path == None:
+    exit()
 
+model_id = args.model_path
 is_chat = not args.no_chat
 use_system_prompt = not args.no_use_system_prompt
 max_new_tokens = args.max_tokens

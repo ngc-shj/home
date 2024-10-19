@@ -21,22 +21,25 @@ parser.add_argument("--max-tokens", type=int, default=256)
 
 args = parser.parse_args(sys.argv[1:])
 
-model_id = args.model_path
-#if model_id == None:
-#    exit
-model_file = args.model_file
-if model_file == None:
-    exit
+if args.model_path == None:
+    exit()
+if args.model_file == None:
+    exit()
 
 is_chat = not args.no_chat
 use_system_prompt = not args.no_use_system_prompt
 max_new_tokens = min(3500, args.max_tokens)
 
-## Download the rwkv model
-if model_id:
-    model_path = hf_hub_download(repo_id=model_id, filename=model_file)
+## Check if the RWKV model exists locally, if not download it
+local_model_path = os.path.join(args.model_path, args.model_file)
+if os.path.isfile(local_model_path):
+    model_path = local_model_path
 else:
-    model_path = f"{model_file}"
+    ## Download the RWKV model
+    model_path = hf_hub_download(
+        args.model_path,
+        filename=args.model_file
+    )
 
 ## Instantiate model from downloaded file
 model = RWKV(model=model_path, strategy='cuda fp16')
