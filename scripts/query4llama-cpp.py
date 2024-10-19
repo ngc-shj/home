@@ -21,14 +21,14 @@ parser.add_argument("--n-gpu-layers", type=int, default=-1)
 args = parser.parse_args(sys.argv[1:])
 
 ## check and set args
-model_id = args.model_path
-if model_id == None:
+if args.model_path == None:
     exit()
 if args.ggml_model_path == None:
     exit()
 if args.ggml_model_file == None:
     exit()
 
+model_id = args.model_path
 is_chat = not args.no_chat
 use_system_prompt = not args.no_use_system_prompt
 max_new_tokens = args.max_tokens
