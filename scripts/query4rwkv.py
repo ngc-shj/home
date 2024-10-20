@@ -99,7 +99,7 @@ def q(
     history: List[Dict[str, str]]=None,
     instruction: str=None
 ) -> List[Dict[str, str]]:
-    start = time.process_time()
+    start = time.time()
     # messages
     messages = ""
     if is_chat:
@@ -144,7 +144,7 @@ def q(
         )
     else:
         user_messages += output
-    end = time.process_time()
+    end = time.time()
     ##
     input_ids = pipeline.encode(prompt)
     input_tokens = len(input_ids)
