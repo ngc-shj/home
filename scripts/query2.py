@@ -1,7 +1,7 @@
 import sys
 import argparse
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, TextStreamer
+from transformers import AutoModelForCausalLM, AutoTokenizer, TextStreamer, pipeline
 from typing import List, Dict
 import time
 
@@ -9,15 +9,17 @@ import time
 parser = argparse.ArgumentParser()
 parser.add_argument("--model-path", type=str, default=None)
 parser.add_argument("--tokenizer-path", type=str, default=None)
+parser.add_argument("--no-chat", action='store_true')
 parser.add_argument("--no-use-system-prompt", action='store_true')
 parser.add_argument("--max-tokens", type=int, default=256)
 
 args = parser.parse_args(sys.argv[1:])
 
-if args.model_path == None:
-    exit()
-
 model_id = args.model_path
+if model_id == None:
+    exit
+
+is_chat = not args.no_chat
 use_system_prompt = not args.no_use_system_prompt
 max_new_tokens = args.max_tokens
 
@@ -30,8 +32,6 @@ tokenizer = AutoTokenizer.from_pretrained(
     tokenizer_id,
     trust_remote_code=True
 )
-is_chat = hasattr(tokenizer, "apply_chat_template") and tokenizer.chat_template is not None
-
 model = AutoModelForCausalLM.from_pretrained(
     model_id,
     torch_dtype="auto",
@@ -48,6 +48,13 @@ streamer = TextStreamer(
     tokenizer,
     skip_prompt=True,
     skip_special_tokens=True
+)
+
+pipe = pipeline(
+    "text-generation",
+    model=model,
+    tokenizer=tokenizer,
+    streamer=streamer
 )
 
 DEFAULT_SYSTEM_PROMPT = "あなたは誠実で優秀な日本人のアシスタントです。"
@@ -102,12 +109,12 @@ def q(
     print(prompt)
     print("--- output")
     # 推論
-    output_ids = model.generate(
-        input_ids.to(model.device),
-        pad_token_id=tokenizer.pad_token_id,
-        streamer=streamer,
+    #input_ids.to(model.device),
+    output_ids = pipe(
+        messages,
         **generation_params
     )
+    print(output_ids)
     output = tokenizer.decode(
         output_ids[0][input_ids.size(1) :],
         skip_special_tokens=True

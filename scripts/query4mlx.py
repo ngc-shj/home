@@ -8,7 +8,6 @@ import time
 parser = argparse.ArgumentParser()
 parser.add_argument("--model-path", type=str, default=None)
 parser.add_argument("--tokenizer-path", type=str, default=None)
-parser.add_argument("--no-chat", action='store_true')
 parser.add_argument("--no-use-system-prompt", action='store_true')
 parser.add_argument("--max-tokens", type=int, default=4096)
 
@@ -18,11 +17,11 @@ if args.model_path == None:
     exit()
 
 model_id = args.model_path
-is_chat = not args.no_chat
 use_system_prompt = not args.no_use_system_prompt
 max_tokens = args.max_tokens
 
 model, tokenizer = load(path_or_hf_repo=model_id)
+is_chat = hasattr(tokenizer, "apply_chat_template") and tokenizer.chat_template is not None
 
 DEFAULT_SYSTEM_PROMPT = "あなたは誠実で優秀な日本人のアシスタントです。"
 

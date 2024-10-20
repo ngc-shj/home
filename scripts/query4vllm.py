@@ -7,7 +7,6 @@ import time
 # argv
 parser = argparse.ArgumentParser()
 parser.add_argument("--model-path", type=str, default=None)
-parser.add_argument("--no-chat", action='store_true')
 parser.add_argument("--no-use-system-prompt", action='store_true')
 parser.add_argument("--max-model-len", type=int, default=32768)
 parser.add_argument("--tensor-parallel-size", type=int, default=1)
@@ -20,7 +19,6 @@ if args.model_path == None:
     exit()
 
 model_id = args.model_path
-is_chat = not args.no_chat
 use_system_prompt = not args.no_use_system_prompt
 max_new_tokens = args.max_tokens
 tensor_parallel_size = args.tensor_parallel_size
@@ -38,6 +36,7 @@ model = LLM(
     gpu_memory_utilization=gpu_memory_utilization
 )
 tokenizer = model.get_tokenizer()
+is_chat = hasattr(tokenizer, "apply_chat_template") and tokenizer.chat_template is not None
 
 DEFAULT_SYSTEM_PROMPT = "あなたは誠実で優秀な日本人のアシスタントです。"
 

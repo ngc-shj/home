@@ -10,7 +10,6 @@ import time
 parser = argparse.ArgumentParser()
 parser.add_argument("--model-path", type=str, default=None)
 parser.add_argument("--tokenizer-path", type=str, default=None)
-parser.add_argument("--no-chat", action='store_true')
 #parser.add_argument("--no-use-system-prompt", action='store_true')
 parser.add_argument("--max-tokens", type=int, default=256)
 parser.add_argument("--preset", type=str, default="auto")
@@ -21,7 +20,6 @@ if args.model_path == None:
     exit()
 
 model_id = args.model_path
-is_chat = not args.no_chat
 #use_system_prompt = not args.no_use_system_prompt
 use_system_prompt = False
 max_new_tokens = args.max_tokens
@@ -36,6 +34,8 @@ tokenizer = AutoTokenizer.from_pretrained(
     tokenizer_id,
     #trust_remote_code=True
 )
+is_chat = hasattr(tokenizer, "apply_chat_template") and tokenizer.chat_template is not None
+
 model = LocalGemma2ForCausalLM.from_pretrained(
     model_id,
     #torch_dtype="auto",
@@ -109,6 +109,7 @@ def q(
     # 推論
     output_ids = model.generate(
         input_ids.to(model.device),
+        pad_token_id=tokenizer.pad_token_id,
         streamer=streamer,
         **generation_params
     )
