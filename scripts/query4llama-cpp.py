@@ -77,7 +77,7 @@ def q(
         "repeat_penalty": 1.1,
     }
     #
-    start = time.process_time()
+    start = time.time()
     # messages
     messages = ""
     if is_chat:
@@ -129,7 +129,7 @@ def q(
         #    print(output["choices"][0]["text"], end='')
         user_messages += output
     print(output)
-    end = time.process_time()
+    end = time.time()
     ##
     input_tokens = outputs["usage"]["prompt_tokens"]
     output_tokens = outputs["usage"]["completion_tokens"]
